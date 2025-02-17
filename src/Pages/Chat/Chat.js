@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { addUserToFirestore, removeUserFromFirestore, subscribeToUsers, subscribeToMessages, sendMessage, deleteMessage, clearChat } from '../../services/chatService';
+import {
+    addUserToFirestore,
+    removeUserFromFirestore,
+    subscribeToUsers,
+    subscribeToMessages,
+    sendMessage,
+    deleteMessage,
+    clearChat
+} from '../../services/chatService';
 import ChatHeader from '../../components/ChatHeader';
 import ChatWindow from '../../components/ChatWindow';
 import UserList from '../../components/UserList';
@@ -22,6 +30,13 @@ const Chat = () => {
         };
     }, []);
 
+    const handleSendMessage = async () => {
+        if (!message.trim()) return; 
+
+        await sendMessage(message);
+        setMessage(''); 
+    };
+
     return (
         <div className="chat-container">
             <ChatHeader onSignOut={removeUserFromFirestore} />
@@ -29,7 +44,12 @@ const Chat = () => {
                 <ChatWindow messages={messages} onDeleteMessage={deleteMessage} />
                 <UserList users={users} />
             </div>
-            <MessageInput message={message} setMessage={setMessage} onSendMessage={() => sendMessage(message)} onClearChat={() => clearChat(messages)} />
+            <MessageInput
+                message={message}
+                setMessage={setMessage}
+                onSendMessage={handleSendMessage}
+                onClearChat={() => clearChat(messages)}
+            />
         </div>
     );
 };
