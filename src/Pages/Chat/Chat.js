@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { auth } from '../../firebase';
 import { addUserToFirestore, removeUserFromFirestore, subscribeToUsers, subscribeToMessages, sendMessage, deleteMessage, clearChat } from '../../services/chatService';
 import ChatHeader from '../../components/ChatHeader';
 import ChatWindow from '../../components/ChatWindow';
