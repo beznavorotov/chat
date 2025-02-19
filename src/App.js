@@ -1,24 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { auth } from './firebase';
-import Auth from './Pages/Auth/Auth';
 import Chat from './Pages/Chat/Chat';
+import Auth from './Pages/Auth/Auth';
+import Register from './Pages/Auth/Register'; 
 
-const App = () => {
+function App() {
     const [user, setUser] = useState(null);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user);
+        const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+            setUser(currentUser);
         });
+
         return () => unsubscribe();
     }, []);
 
     return (
-        <div>
-            {user ? <Chat /> : <Auth />}
-        </div>
+        <Router>
+            <Routes>
+                <Route path="/" element={user ? <Navigate to="/chat" /> : <Auth />} />
+                <Route path="/register" element={user ? <Navigate to="/chat" /> : <Register />} />
+                <Route path="/chat" element={user ? <Chat /> : <Navigate to="/" />} />
+            </Routes>
+        </Router>
     );
-};
+}
 
 export default App;
