@@ -8,7 +8,7 @@ import {
     deleteMessage,
     clearChat
 } from '../../services/chatService';
-import ChatHeader from '../../components/ChatHeader';
+import ChatHeader from '../../components/ChatHeader/ChatHeader';
 import ChatWindow from '../../components/ChatWindow';
 import UserList from '../../components/UserList';
 import MessageInput from '../../components/MessageInput';
@@ -32,9 +32,8 @@ const Chat = () => {
 
     const handleSendMessage = async () => {
         if (!message.trim()) return; 
-
         await sendMessage(message);
-        setMessage(''); 
+        setMessage('');
     };
 
     return (

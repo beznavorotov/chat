@@ -1,7 +1,6 @@
 import { db, auth } from '../firebase';
 import { collection, setDoc, getDoc, doc, onSnapshot, query, where, getDocs, deleteDoc, writeBatch, addDoc } from 'firebase/firestore';
 
-// Додає користувача в Firestore (унікальність за UID)
 export const addUserToFirestore = async () => {
     const currentUser = auth.currentUser;
     if (!currentUser) return;
@@ -17,7 +16,6 @@ export const addUserToFirestore = async () => {
     }
 };
 
-// Видаляє користувача з Firestore
 export const removeUserFromFirestore = async () => {
     const currentUser = auth.currentUser;
     if (!currentUser) return;
@@ -32,7 +30,6 @@ export const removeUserFromFirestore = async () => {
     await auth.signOut();
 };
 
-// Отримує список користувачів у чаті (live updates)
 export const subscribeToUsers = (setUsers) => {
     return onSnapshot(collection(db, 'users'), (snapshot) => {
         const userList = snapshot.docs.map(doc => doc.data().name);
@@ -40,7 +37,6 @@ export const subscribeToUsers = (setUsers) => {
     });
 };
 
-// Отримує повідомлення (live updates)
 export const subscribeToMessages = (setMessages) => {
     return onSnapshot(collection(db, 'messages'), (snapshot) => {
         const messageList = snapshot.docs.map(doc => ({
@@ -52,7 +48,6 @@ export const subscribeToMessages = (setMessages) => {
     });
 };
 
-// Відправляє повідомлення
 export const sendMessage = async (message) => {
     if (!message.trim()) return;
 
@@ -65,12 +60,10 @@ export const sendMessage = async (message) => {
     await addDoc(collection(db, 'messages'), newMessage);
 };
 
-// Видаляє конкретне повідомлення
 export const deleteMessage = async (id) => {
     await deleteDoc(doc(db, 'messages', id));
 };
 
-// Очищає чат
 export const clearChat = async (messages) => {
     const batch = writeBatch(db);
     messages.forEach((msg) => {

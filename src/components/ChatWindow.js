@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { auth } from '../firebase';
-
+import deleteIcon from './../icons/delete.png';
+import './../Pages/Chat/Chat.css';
 
 const ChatWindow = ({ messages, onDeleteMessage }) => {
     const chatRef = useRef(null);
@@ -17,7 +18,12 @@ const ChatWindow = ({ messages, onDeleteMessage }) => {
                 <div key={msg.id} className="chat-message">
                     <strong>{msg.user}:</strong> {msg.text}
                     {msg.user === auth.currentUser.displayName && (
-                        <button className="btn btn-link" onClick={() => onDeleteMessage(msg.id)}>Видалити</button>
+                        <button
+                            className="btn btn-link"
+                            onClick={() => onDeleteMessage(msg.id)}
+                        >
+                            <img src={deleteIcon} alt="Delete" className='delete-icon' />
+                        </button>
                     )}
                 </div>
             ))}
