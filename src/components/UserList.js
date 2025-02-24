@@ -24,7 +24,6 @@ const UserList = () => {
                 <ul>
                     {users.map((user) => {
                         const isCurrent = currentUser && currentUser.uid === user.uid;
-                        // Якщо firstName та lastName доступні – використовуємо їх, інакше спробуємо user.name
                         const displayName = (user.firstName && user.lastName)
                             ? `${user.firstName} ${user.lastName}`
                             : user.name || 'Без імені';
