@@ -7,8 +7,13 @@ const ChatHeader = () => {
     const navigate = useNavigate();
 
     const handleSignOut = async () => {
-        await signOut(auth);
-        navigate('/login');
+        try {
+            await signOut(auth);
+            localStorage.removeItem('user');
+            navigate('/login');
+        } catch (error) {
+            console.error("Помилка виходу:", error);
+        }
     };
 
     return (
