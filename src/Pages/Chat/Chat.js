@@ -50,7 +50,7 @@ const Chat = () => {
             clearTimeout(timeoutId);
             events.forEach((event) => window.removeEventListener(event, resetTimer));
         };
-    }, []);
+    }, );
 
     const handleAutoLogout = async () => {
         toast.info('Ви автоматично вийшли через 10 хвилин неактивності.');
