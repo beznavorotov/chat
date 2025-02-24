@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { auth } from './firebase';
 import Chat from './Pages/Chat/Chat';
 import Auth from './Pages/Auth/Auth';
-import Register from './Pages/Auth/Register'; 
+import Register from './Pages/Register/Register'; 
 
 function App() {
     const [user, setUser] = useState(null);

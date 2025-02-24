@@ -1,15 +1,21 @@
 import React from 'react';
+import './../Pages/Chat/Chat.css';
 
 const MessageInput = ({ message, setMessage, onSendMessage, onClearChat }) => {
     const handleSendMessage = () => {
-        if (message.trim()) {
-            onSendMessage(); 
-            setMessage(''); 
-        } 
+        const trimmedMessage = message.trim();
+        if (trimmedMessage === '/clear') {
+            // Викликаємо очищення чату, якщо введена команда "/clear"
+            onClearChat();
+            setMessage('');
+        } else if (trimmedMessage) {
+            onSendMessage();
+            setMessage('');
+        }
     };
 
     return (
-        <div className="input-group mt-3">
+        <div className="input-group mt-3 mb-3">
             <input 
                 type="text" 
                 placeholder="Ваше повідомлення..." 
@@ -18,8 +24,9 @@ const MessageInput = ({ message, setMessage, onSendMessage, onClearChat }) => {
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} 
                 className="form-control"
             />
-            <button className="btn btn-success" onClick={handleSendMessage}>Відправити</button>
-            <button className="btn btn-warning" onClick={onClearChat}>Очистити чат</button>
+            <button className="button-68 ms-2 me-3" onClick={handleSendMessage}>
+                Відправити
+            </button>
         </div>
     );
 };

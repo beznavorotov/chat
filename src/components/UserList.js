@@ -4,7 +4,6 @@ import { collection, onSnapshot } from 'firebase/firestore';
 
 const UserList = () => {
     const [users, setUsers] = useState([]);
-    // Зчитуємо поточного користувача з localStorage
     const currentUser = JSON.parse(localStorage.getItem('user'));
 
     useEffect(() => {
@@ -24,11 +23,10 @@ const UserList = () => {
             {users.length > 0 ? (
                 <ul>
                     {users.map((user) => {
-                        // Якщо користувач у Firestore співпадає з поточним, виділяємо його
                         const isCurrent = currentUser && currentUser.uid === user.uid;
-                        // Визначаємо ім'я користувача: якщо є firstName/lastName, комбінуємо їх, інакше використовуємо user.name
-                        const displayName = user.firstName && user.lastName 
-                            ? `${user.firstName} ${user.lastName}` 
+                        // Якщо firstName та lastName доступні – використовуємо їх, інакше спробуємо user.name
+                        const displayName = (user.firstName && user.lastName)
+                            ? `${user.firstName} ${user.lastName}`
                             : user.name || 'Без імені';
                         return (
                             <li key={user.uid}>
