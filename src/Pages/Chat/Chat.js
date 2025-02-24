@@ -12,12 +12,15 @@ import ChatHeader from '../../components/ChatHeader/ChatHeader';
 import ChatWindow from '../../components/ChatWindow';
 import UserList from '../../components/UserList';
 import MessageInput from '../../components/MessageInput';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import './Chat.css';
 
 const Chat = () => {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const [users, setUsers] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         addUserToFirestore();
@@ -30,8 +33,33 @@ const Chat = () => {
         };
     }, []);
 
+    useEffect(() => {
+        const idleTimeout = 10 * 60 * 1000; 
+        let timeoutId;
+
+        const resetTimer = () => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(handleAutoLogout, idleTimeout);
+        };
+
+        const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+        events.forEach((event) => window.addEventListener(event, resetTimer));
+        resetTimer(); 
+
+        return () => {
+            clearTimeout(timeoutId);
+            events.forEach((event) => window.removeEventListener(event, resetTimer));
+        };
+    }, []);
+
+    const handleAutoLogout = async () => {
+        toast.info('Ви автоматично вийшли через 10 хвилин неактивності.');
+        await removeUserFromFirestore();
+        navigate('/login');
+    };
+
     const handleSendMessage = async () => {
-        if (!message.trim()) return; 
+        if (!message.trim()) return;
         await sendMessage(message);
         setMessage('');
     };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { signOut, auth } from '../../firebase';
+import { removeUserFromFirestore } from '../../services/chatService';
 import { useNavigate } from 'react-router-dom';
 import './ChatHeader.css';
 
@@ -8,8 +8,7 @@ const ChatHeader = () => {
 
     const handleSignOut = async () => {
         try {
-            await signOut(auth);
-            localStorage.removeItem('user');
+            await removeUserFromFirestore();
             navigate('/login');
         } catch (error) {
             console.error("Помилка виходу:", error);
