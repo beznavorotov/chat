@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-    addUserToFirestore,
-    removeUserFromFirestore,
-    subscribeToUsers,
-    subscribeToMessages,
-    sendMessage,
-    deleteMessage,
-    clearChat
+  addUserToFirestore,
+  removeUserFromFirestore,
+  subscribeToUsers,
+  subscribeToMessages,
+  sendMessage,
+  deleteMessage,
+  clearChat
 } from '../../services/chatService';
 import ChatHeader from '../../components/ChatHeader/ChatHeader';
 import ChatWindow from '../../components/ChatWindow';
@@ -17,68 +17,83 @@ import { toast } from 'react-toastify';
 import './Chat.css';
 
 const Chat = () => {
-    const [message, setMessage] = useState('');
-    const [messages, setMessages] = useState([]);
-    const [users, setUsers] = useState([]);
-    const navigate = useNavigate();
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [users, setUsers] = useState([]);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        addUserToFirestore();
-        const unsubscribeUsers = subscribeToUsers(setUsers);
-        const unsubscribeMessages = subscribeToMessages(setMessages);
+  useEffect(() => {
+    addUserToFirestore();
+    const unsubscribeUsers = subscribeToUsers(setUsers);
+    const unsubscribeMessages = subscribeToMessages(setMessages);
 
-        return () => {
-            unsubscribeUsers();
-            unsubscribeMessages();
-        };
-    }, []);
+    return () => {
+      unsubscribeUsers();
+      unsubscribeMessages();
+    };
+  }, []);
 
-    useEffect(() => {
-        const idleTimeout = 10 * 60 * 1000; 
-        let timeoutId;
+  // Автовихід через 10 хвилин неактивності
+  useEffect(() => {
+    const idleTimeout = 10 * 60 * 1000; // 10 хвилин
+    let timeoutId;
 
-        const resetTimer = () => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(handleAutoLogout, idleTimeout);
-        };
-
-        const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
-        events.forEach((event) => window.addEventListener(event, resetTimer));
-        resetTimer(); 
-
-        return () => {
-            clearTimeout(timeoutId);
-            events.forEach((event) => window.removeEventListener(event, resetTimer));
-        };
-    }, );
-
-    const handleAutoLogout = async () => {
-        toast.info('Ви автоматично вийшли через 10 хвилин неактивності.');
-        await removeUserFromFirestore();
-        navigate('/login');
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleAutoLogout, idleTimeout);
     };
 
-    const handleSendMessage = async () => {
-        if (!message.trim()) return;
-        await sendMessage(message);
-        setMessage('');
+    const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+    events.forEach((event) => window.addEventListener(event, resetTimer));
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }, []);
+
+  const handleAutoLogout = async () => {
+    toast.info('Ви автоматично вийшли через 10 хвилин неактивності.');
+    await removeUserFromFirestore();
+    navigate('/login');
+  };
+
+  // Видалення користувача при закритті вкладки
+  useEffect(() => {
+    const handleBeforeUnload = async (e) => {
+      // Викликаємо видалення користувача
+      // Використання navigator.sendBeacon можна розглянути для асинхронного виклику
+      await removeUserFromFirestore();
     };
 
-    return (
-        <div className="chat-container">
-            <ChatHeader onSignOut={removeUserFromFirestore} />
-            <div className="chat-content">
-                <ChatWindow messages={messages} onDeleteMessage={deleteMessage} />
-                <UserList users={users} />
-            </div>
-            <MessageInput
-                message={message}
-                setMessage={setMessage}
-                onSendMessage={handleSendMessage}
-                onClearChat={() => clearChat(messages)}
-            />
-        </div>
-    );
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+    await sendMessage(message);
+    setMessage('');
+  };
+
+  return (
+    <div className="chat-container">
+      <ChatHeader onSignOut={removeUserFromFirestore} />
+      <div className="chat-content">
+        <ChatWindow messages={messages} onDeleteMessage={deleteMessage} />
+        <UserList users={users} />
+      </div>
+      <MessageInput
+        message={message}
+        setMessage={setMessage}
+        onSendMessage={handleSendMessage}
+        onClearChat={() => clearChat(messages)}
+      />
+    </div>
+  );
 };
 
 export default Chat;
