@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   addUserToFirestore,
   removeUserFromFirestore,
@@ -33,9 +33,16 @@ const Chat = () => {
     };
   }, []);
 
-  // Автовихід через 10 хвилин неактивності
+  // Стабілізуємо handleAutoLogout за допомогою useCallback
+  const handleAutoLogout = useCallback(async () => {
+    toast.info('Ви автоматично вийшли через 10 хвилин неактивності.');
+    await removeUserFromFirestore();
+    navigate('/login');
+  }, [navigate]);
+
+  // Автовихід через 30 хвилин неактивності
   useEffect(() => {
-    const idleTimeout = 10 * 60 * 1000; // 10 хвилин
+    const idleTimeout = 30 * 60 * 1000; 
     let timeoutId;
 
     const resetTimer = () => {
@@ -51,19 +58,10 @@ const Chat = () => {
       clearTimeout(timeoutId);
       events.forEach((event) => window.removeEventListener(event, resetTimer));
     };
-  }, []);
+  }, [handleAutoLogout]);
 
-  const handleAutoLogout = async () => {
-    toast.info('Ви автоматично вийшли через 10 хвилин неактивності.');
-    await removeUserFromFirestore();
-    navigate('/login');
-  };
-
-  // Видалення користувача при закритті вкладки
   useEffect(() => {
     const handleBeforeUnload = async (e) => {
-      // Викликаємо видалення користувача
-      // Використання navigator.sendBeacon можна розглянути для асинхронного виклику
       await removeUserFromFirestore();
     };
 
