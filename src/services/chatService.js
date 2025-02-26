@@ -47,7 +47,10 @@ export const removeUserFromFirestore = async () => {
 
 export const subscribeToUsers = (setUsers) => {
   return onSnapshot(collection(db, "users"), (snapshot) => {
-    const userList = snapshot.docs.map((doc) => doc.data().name);
+    const userList = snapshot.docs.map((doc) => ({
+      uid: doc.id,
+      ...doc.data(),
+    }));
     setUsers(userList);
   });
 };
