@@ -5,7 +5,6 @@ const MessageInput = ({ message, setMessage, onSendMessage, onClearChat }) => {
     const handleSendMessage = () => {
         const trimmedMessage = message.trim();
         if (trimmedMessage === '/clear') {
-            // Викликаємо очищення чату, якщо введена команда "/clear"
             onClearChat();
             setMessage('');
         } else if (trimmedMessage) {
