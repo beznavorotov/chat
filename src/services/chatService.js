@@ -29,7 +29,7 @@ export const addUserToFirestore = async () => {
 };
 
 export const removeUserFromFirestore = async () => {
-  const currentUser = auth.currentUser;
+  let currentUser = auth.currentUser || JSON.parse(localStorage.getItem("user"));
   if (!currentUser) return;
 
   const userQuery = query(
@@ -44,6 +44,7 @@ export const removeUserFromFirestore = async () => {
   localStorage.removeItem("user");
   await auth.signOut();
 };
+
 
 export const subscribeToUsers = (setUsers) => {
   return onSnapshot(collection(db, "users"), (snapshot) => {
