@@ -16,7 +16,7 @@ const ChatHeader = () => {
     };
 
     return (
-        <header className="d-flex justify-content-between align-items-center p-3 bg-primary text-white">
+        <header className="d-flex justify-content-between align-items-center p-3 chat-header">
             <h1>CHAT BEZNAVOROTOV</h1>
             <button className="button-24" onClick={handleSignOut}>Вихід</button>
         </header>

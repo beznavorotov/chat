@@ -16,6 +16,35 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import './Chat.css';
 
+const useAutoLogout = (handleAutoLogout, idleTimeout = 30 * 60 * 1000) => {
+  useEffect(() => {
+    let timeoutId;
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleAutoLogout, idleTimeout);
+    };
+
+    const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+    events.forEach((event) => window.addEventListener(event, resetTimer));
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }, [handleAutoLogout, idleTimeout]);
+};
+
+const useBeforeUnloadHandler = (handler) => {
+  useEffect(() => {
+    window.addEventListener('beforeunload', handler);
+    return () => {
+      window.removeEventListener('beforeunload', handler);
+    };
+  }, [handler]);
+};
+
 const Chat = () => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -33,43 +62,19 @@ const Chat = () => {
     };
   }, []);
 
-  // Стабілізуємо handleAutoLogout за допомогою useCallback
   const handleAutoLogout = useCallback(async () => {
     toast.info('Ви автоматично вийшли через 10 хвилин неактивності.');
     await removeUserFromFirestore();
     navigate('/login');
   }, [navigate]);
 
-  // Автовихід через 30 хвилин неактивності
-  useEffect(() => {
-    const idleTimeout = 30 * 60 * 1000; 
-    let timeoutId;
+  useAutoLogout(handleAutoLogout, 30 * 60 * 1000);
 
-    const resetTimer = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(handleAutoLogout, idleTimeout);
-    };
-
-    const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
-    events.forEach((event) => window.addEventListener(event, resetTimer));
-    resetTimer();
-
-    return () => {
-      clearTimeout(timeoutId);
-      events.forEach((event) => window.removeEventListener(event, resetTimer));
-    };
-  }, [handleAutoLogout]);
-
-  useEffect(() => {
-    const handleBeforeUnload = async (e) => {
-      await removeUserFromFirestore();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
+  const handleBeforeUnload = useCallback(async (e) => {
+    await removeUserFromFirestore();
   }, []);
+
+  useBeforeUnloadHandler(handleBeforeUnload);
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;

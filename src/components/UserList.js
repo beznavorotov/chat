@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
+import defaultIcon from '../icons/profile.png'; 
+import './../Pages/Chat/Chat.css';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -29,6 +31,11 @@ const UserList = () => {
               : user.name || 'Без імені';
             return (
               <li key={user.uid}>
+                <img 
+                  src={defaultIcon} 
+                  alt="User icon" 
+                  className="provider-icon" 
+                />
                 {isCurrent ? <strong>{displayName} (Ви)</strong> : displayName}
               </li>
             );
