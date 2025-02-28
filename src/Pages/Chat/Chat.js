@@ -8,6 +8,7 @@ import {
   deleteMessage,
   clearChat,
   setUserOffline,
+  checkInactiveUsers, // Додано
 } from "../../services/chatService";
 import ChatHeader from "../../components/ChatHeader/ChatHeader";
 import ChatWindow from "../../components/ChatWindow";
@@ -22,7 +23,7 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
-  const inactivityTimeoutRef = useRef(null); 
+  const inactivityTimeoutRef = useRef(null);
 
   useEffect(() => {
     addUserToFirestore();
@@ -42,7 +43,7 @@ const Chat = () => {
     navigate("/login");
   }, [navigate]);
 
-  // Функція для обнулення таймера при активності
+  // Оновлюємо останню активність при кожній взаємодії
   const resetInactivityTimer = useCallback(() => {
     if (inactivityTimeoutRef.current) {
       clearTimeout(inactivityTimeoutRef.current);
@@ -63,6 +64,15 @@ const Chat = () => {
       events.forEach((event) => window.removeEventListener(event, resetInactivityTimer));
     };
   }, [resetInactivityTimer]);
+
+  // Видаляємо неактивних користувачів кожні 5 хвилин
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      await checkInactiveUsers();
+    }, 5 * 60 * 1000); // 5 хвилин
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Оновлення статусу при закритті вкладки
   useEffect(() => {

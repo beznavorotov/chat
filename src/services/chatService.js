@@ -3,15 +3,16 @@ import {
   collection,
   setDoc,
   getDoc,
+  getDocs,
   doc,
   onSnapshot,
   deleteDoc,
   writeBatch,
   addDoc,
-  updateDoc, // Додано
+  updateDoc,
 } from "firebase/firestore";
 
-// Додаємо користувача в Firestore з онлайн-статусом
+// Додаємо користувача в Firestore
 export const addUserToFirestore = async () => {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
@@ -24,13 +25,14 @@ export const addUserToFirestore = async () => {
       uid: currentUser.uid,
       name: currentUser.displayName || "Анонім",
       status: "online",
+      lastActive: Date.now(),
     });
   } else {
-    await updateDoc(userRef, { status: "online" });
+    await updateDoc(userRef, { status: "online", lastActive: Date.now() });
   }
 };
 
-// Видаляємо користувача повністю з Firestore при виході
+// Видаляємо користувача з Firestore при виході
 export const removeUserFromFirestore = async () => {
   let currentUser = auth.currentUser || JSON.parse(localStorage.getItem("user"));
   if (!currentUser) return;
@@ -47,19 +49,25 @@ export const setUserOffline = async () => {
   if (!currentUser) return;
 
   const userRef = doc(db, "users", currentUser.uid);
-  await updateDoc(userRef, { status: "offline" });
+  await updateDoc(userRef, { status: "offline", lastActive: Date.now() });
 };
 
-export const subscribeToUsers = (setUsers) => {
-  return onSnapshot(collection(db, "users"), (snapshot) => {
-    const userList = snapshot.docs.map((doc) => ({
-      uid: doc.id,
-      ...doc.data(),
-    }));
-    setUsers(userList);
+// Видаляємо неактивних користувачів після 20 хвилин
+export const checkInactiveUsers = async () => {
+  const inactiveTime = 20 * 60 * 1000; // 20 хвилин
+  const now = Date.now();
+  const usersRef = collection(db, "users");
+  const snapshot = await getDocs(usersRef);
+
+  snapshot.forEach(async (docSnap) => {
+    const userData = docSnap.data();
+    if (userData.lastActive && now - userData.lastActive > inactiveTime) {
+      await deleteDoc(doc(db, "users", userData.uid));
+    }
   });
 };
 
+// Підписка на повідомлення у чаті
 export const subscribeToMessages = (setMessages) => {
   return onSnapshot(collection(db, "messages"), (snapshot) => {
     const messageList = snapshot.docs.map((doc) => ({
@@ -71,6 +79,7 @@ export const subscribeToMessages = (setMessages) => {
   });
 };
 
+// Відправка повідомлення
 export const sendMessage = async (message) => {
   if (!message.trim()) return;
 
@@ -83,10 +92,12 @@ export const sendMessage = async (message) => {
   await addDoc(collection(db, "messages"), newMessage);
 };
 
+// Видалення повідомлення
 export const deleteMessage = async (id) => {
   await deleteDoc(doc(db, "messages", id));
 };
 
+// Очищення чату
 export const clearChat = async (messages) => {
   const batch = writeBatch(db);
   messages.forEach((msg) => {
@@ -94,4 +105,15 @@ export const clearChat = async (messages) => {
     batch.delete(msgRef);
   });
   await batch.commit();
+};
+
+// Підписка на користувачів у чаті
+export const subscribeToUsers = (setUsers) => {
+  return onSnapshot(collection(db, "users"), (snapshot) => {
+    const userList = snapshot.docs.map((doc) => ({
+      uid: doc.id,
+      ...doc.data(),
+    }));
+    setUsers(userList);
+  });
 };
