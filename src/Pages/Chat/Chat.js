@@ -5,10 +5,8 @@ import {
   subscribeToUsers,
   subscribeToMessages,
   sendMessage,
-  deleteMessage,
-  clearChat,
   setUserOffline,
-  checkInactiveUsers, // Додано
+  removeInactiveUsers,
 } from "../../services/chatService";
 import ChatHeader from "../../components/ChatHeader/ChatHeader";
 import ChatWindow from "../../components/ChatWindow";
@@ -36,19 +34,28 @@ const Chat = () => {
     };
   }, []);
 
-  // Автовихід через 10 хвилин неактивності
+  // Автовихід через 20 хвилин неактивності
   const handleAutoLogout = useCallback(async () => {
-    toast.info("Ви автоматично вийшли через 10 хвилин неактивності.");
+    toast.info("Ви автоматично вийшли через 20 хвилин неактивності.");
     await removeUserFromFirestore();
     navigate("/login");
   }, [navigate]);
 
-  // Оновлюємо останню активність при кожній взаємодії
+  // Очищення неактивних користувачів кожні 5 хвилин
+  useEffect(() => {
+    const interval = setInterval(() => {
+      removeInactiveUsers();
+    }, 5 * 60 * 1000); // 5 хвилин
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Оновлення статусу при активності
   const resetInactivityTimer = useCallback(() => {
     if (inactivityTimeoutRef.current) {
       clearTimeout(inactivityTimeoutRef.current);
     }
-    inactivityTimeoutRef.current = setTimeout(handleAutoLogout, 10 * 60 * 1000);
+    inactivityTimeoutRef.current = setTimeout(handleAutoLogout, 20 * 60 * 1000);
   }, [handleAutoLogout]);
 
   useEffect(() => {
@@ -65,20 +72,10 @@ const Chat = () => {
     };
   }, [resetInactivityTimer]);
 
-  // Видаляємо неактивних користувачів кожні 5 хвилин
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      await checkInactiveUsers();
-    }, 5 * 60 * 1000); // 5 хвилин
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Оновлення статусу при закритті вкладки
+  // Встановлюємо статус "offline" при закритті вкладки
   useEffect(() => {
     const handleBeforeUnload = async () => {
       await setUserOffline();
-      await removeUserFromFirestore();
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -97,14 +94,13 @@ const Chat = () => {
     <div className="chat-container">
       <ChatHeader onSignOut={removeUserFromFirestore} />
       <div className="chat-content">
-        <ChatWindow messages={messages} onDeleteMessage={deleteMessage} />
+        <ChatWindow messages={messages} />
         <UserList users={users} />
       </div>
       <MessageInput
         message={message}
         setMessage={setMessage}
         onSendMessage={handleSendMessage}
-        onClearChat={() => clearChat(messages)}
       />
     </div>
   );

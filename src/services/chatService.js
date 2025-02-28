@@ -7,7 +7,6 @@ import {
   doc,
   onSnapshot,
   deleteDoc,
-  writeBatch,
   addDoc,
   updateDoc,
 } from "firebase/firestore";
@@ -52,22 +51,33 @@ export const setUserOffline = async () => {
   await updateDoc(userRef, { status: "offline", lastActive: Date.now() });
 };
 
-// Видаляємо неактивних користувачів після 20 хвилин
-export const checkInactiveUsers = async () => {
-  const inactiveTime = 20 * 60 * 1000; // 20 хвилин
+// Видаляємо неактивних користувачів через 5 хвилин
+export const removeInactiveUsers = async () => {
+  const offlineTime = 5 * 60 * 1000; // 5 хвилин
   const now = Date.now();
   const usersRef = collection(db, "users");
   const snapshot = await getDocs(usersRef);
 
   snapshot.forEach(async (docSnap) => {
     const userData = docSnap.data();
-    if (userData.lastActive && now - userData.lastActive > inactiveTime) {
+    if (userData.status === "offline" && now - userData.lastActive > offlineTime) {
       await deleteDoc(doc(db, "users", userData.uid));
     }
   });
 };
 
-// Підписка на повідомлення у чаті
+// **Підписка на список користувачів**
+export const subscribeToUsers = (setUsers) => {
+  return onSnapshot(collection(db, "users"), (snapshot) => {
+    const userList = snapshot.docs.map((doc) => ({
+      uid: doc.id,
+      ...doc.data(),
+    }));
+    setUsers(userList);
+  });
+};
+
+// **Підписка на повідомлення**
 export const subscribeToMessages = (setMessages) => {
   return onSnapshot(collection(db, "messages"), (snapshot) => {
     const messageList = snapshot.docs.map((doc) => ({
@@ -79,7 +89,7 @@ export const subscribeToMessages = (setMessages) => {
   });
 };
 
-// Відправка повідомлення
+// **Відправка повідомлення**
 export const sendMessage = async (message) => {
   if (!message.trim()) return;
 
@@ -87,33 +97,8 @@ export const sendMessage = async (message) => {
     text: message,
     timestamp: new Date().toISOString(),
     user: auth.currentUser.displayName || "Анонім",
+    uid: auth.currentUser.uid,
   };
 
   await addDoc(collection(db, "messages"), newMessage);
-};
-
-// Видалення повідомлення
-export const deleteMessage = async (id) => {
-  await deleteDoc(doc(db, "messages", id));
-};
-
-// Очищення чату
-export const clearChat = async (messages) => {
-  const batch = writeBatch(db);
-  messages.forEach((msg) => {
-    const msgRef = doc(db, "messages", msg.id);
-    batch.delete(msgRef);
-  });
-  await batch.commit();
-};
-
-// Підписка на користувачів у чаті
-export const subscribeToUsers = (setUsers) => {
-  return onSnapshot(collection(db, "users"), (snapshot) => {
-    const userList = snapshot.docs.map((doc) => ({
-      uid: doc.id,
-      ...doc.data(),
-    }));
-    setUsers(userList);
-  });
 };
