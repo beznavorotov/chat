@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { auth, provider, db } from "../../firebase";
 import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -12,6 +12,31 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+
+  // Оновлення статусу користувача
+  const updateUserStatus = async (user, status) => {
+    if (!user) return;
+    await setDoc(
+      doc(db, "users", user.uid),
+      { status },
+      { merge: true }
+    );
+  };
+
+  // Видалення користувача при закритті вкладки
+  useEffect(() => {
+    const handleBeforeUnload = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        await deleteDoc(doc(db, "users", user.uid));
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   const signInWithGoogle = async () => {
     setLoading(true);
@@ -31,7 +56,10 @@ const Auth = () => {
           firstName,
           lastName,
           email: user.email,
+          status: "online",
         });
+      } else {
+        await updateUserStatus(user, "online");
       }
 
       localStorage.setItem(
@@ -66,10 +94,12 @@ const Auth = () => {
         email: result.user.email,
         firstName: "Користувач",
         lastName: "",
+        status: "online",
       };
 
       if (userSnap.exists()) {
         userData = { ...userData, ...userSnap.data() };
+        await updateUserStatus(result.user, "online");
       }
 
       localStorage.setItem("user", JSON.stringify(userData));

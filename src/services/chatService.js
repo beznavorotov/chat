@@ -5,14 +5,13 @@ import {
   getDoc,
   doc,
   onSnapshot,
-  query,
-  where,
-  getDocs,
   deleteDoc,
   writeBatch,
   addDoc,
+  updateDoc, // Додано
 } from "firebase/firestore";
 
+// Додаємо користувача в Firestore з онлайн-статусом
 export const addUserToFirestore = async () => {
   const currentUser = auth.currentUser;
   if (!currentUser) return;
@@ -24,27 +23,32 @@ export const addUserToFirestore = async () => {
     await setDoc(userRef, {
       uid: currentUser.uid,
       name: currentUser.displayName || "Анонім",
+      status: "online",
     });
+  } else {
+    await updateDoc(userRef, { status: "online" });
   }
 };
 
+// Видаляємо користувача повністю з Firestore при виході
 export const removeUserFromFirestore = async () => {
   let currentUser = auth.currentUser || JSON.parse(localStorage.getItem("user"));
   if (!currentUser) return;
 
-  const userQuery = query(
-    collection(db, "users"),
-    where("uid", "==", currentUser.uid)
-  );
-  const userSnapshot = await getDocs(userQuery);
-
-  userSnapshot.forEach(async (docSnap) => {
-    await deleteDoc(docSnap.ref);
-  });
+  const userRef = doc(db, "users", currentUser.uid);
+  await deleteDoc(userRef);
   localStorage.removeItem("user");
   await auth.signOut();
 };
 
+// Оновлюємо статус користувача як "offline"
+export const setUserOffline = async () => {
+  let currentUser = auth.currentUser || JSON.parse(localStorage.getItem("user"));
+  if (!currentUser) return;
+
+  const userRef = doc(db, "users", currentUser.uid);
+  await updateDoc(userRef, { status: "offline" });
+};
 
 export const subscribeToUsers = (setUsers) => {
   return onSnapshot(collection(db, "users"), (snapshot) => {

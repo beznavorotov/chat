@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { db } from '../firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
-import defaultIcon from '../icons/profile.png'; 
-import './../Pages/Chat/Chat.css';
+import React, { useEffect, useState } from "react";
+import { db } from "../firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import defaultIcon from "../icons/profile.png"; 
+import "./../Pages/Chat/Chat.css";
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
-  const currentUser = JSON.parse(localStorage.getItem('user'));
+  const currentUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const userList = snapshot.docs.map(doc => ({
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+      const userList = snapshot.docs.map((doc) => ({
         uid: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
       setUsers(userList);
     });
@@ -26,9 +26,8 @@ const UserList = () => {
         <ul>
           {users.map((user) => {
             const isCurrent = currentUser && currentUser.uid === user.uid;
-            const displayName = (user.firstName && user.lastName)
-              ? `${user.firstName} ${user.lastName}`
-              : user.name || 'Без імені';
+            const displayName = user.name || "Без імені";
+
             return (
               <li key={user.uid}>
                 <img 

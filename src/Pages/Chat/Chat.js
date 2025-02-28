@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   addUserToFirestore,
   removeUserFromFirestore,
@@ -6,21 +6,23 @@ import {
   subscribeToMessages,
   sendMessage,
   deleteMessage,
-  clearChat
-} from '../../services/chatService';
-import ChatHeader from '../../components/ChatHeader/ChatHeader';
-import ChatWindow from '../../components/ChatWindow';
-import UserList from '../../components/UserList';
-import MessageInput from '../../components/MessageInput';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import './Chat.css';
+  clearChat,
+  setUserOffline,
+} from "../../services/chatService";
+import ChatHeader from "../../components/ChatHeader/ChatHeader";
+import ChatWindow from "../../components/ChatWindow";
+import UserList from "../../components/UserList";
+import MessageInput from "../../components/MessageInput";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "./Chat.css";
 
 const Chat = () => {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
+  const inactivityTimeoutRef = useRef(null); 
 
   useEffect(() => {
     addUserToFirestore();
@@ -33,37 +35,52 @@ const Chat = () => {
     };
   }, []);
 
-  // Стабілізуємо handleAutoLogout за допомогою useCallback
+  // Автовихід через 10 хвилин неактивності
   const handleAutoLogout = useCallback(async () => {
-    toast.info('Ви автоматично вийшли через 10 хвилин неактивності.');
+    toast.info("Ви автоматично вийшли через 10 хвилин неактивності.");
     await removeUserFromFirestore();
-    navigate('/login');
+    navigate("/login");
   }, [navigate]);
 
-  // Автовихід через 30 хвилин неактивності
+  // Функція для обнулення таймера при активності
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityTimeoutRef.current) {
+      clearTimeout(inactivityTimeoutRef.current);
+    }
+    inactivityTimeoutRef.current = setTimeout(handleAutoLogout, 10 * 60 * 1000);
+  }, [handleAutoLogout]);
+
   useEffect(() => {
-    const idleTimeout = 30 * 60 * 1000;
-    let timeoutId;
+    const events = ["mousemove", "mousedown", "keypress", "scroll", "touchstart"];
+    events.forEach((event) => window.addEventListener(event, resetInactivityTimer));
 
-    const resetTimer = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(handleAutoLogout, idleTimeout);
-    };
-
-    const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
-    events.forEach((event) => window.addEventListener(event, resetTimer));
-    resetTimer();
+    resetInactivityTimer();
 
     return () => {
-      clearTimeout(timeoutId);
-      events.forEach((event) => window.removeEventListener(event, resetTimer));
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current);
+      }
+      events.forEach((event) => window.removeEventListener(event, resetInactivityTimer));
     };
-  }, [handleAutoLogout]);
+  }, [resetInactivityTimer]);
+
+  // Оновлення статусу при закритті вкладки
+  useEffect(() => {
+    const handleBeforeUnload = async () => {
+      await setUserOffline();
+      await removeUserFromFirestore();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     await sendMessage(message);
-    setMessage('');
+    setMessage("");
   };
 
   return (
