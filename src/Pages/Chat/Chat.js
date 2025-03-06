@@ -5,8 +5,10 @@ import {
   subscribeToUsers,
   subscribeToMessages,
   sendMessage,
+  deleteMessage,
   setUserOffline,
   removeInactiveUsers,
+  clearChat // Імпортуємо clearChat
 } from "../../services/chatService";
 import ChatHeader from "../../components/ChatHeader/ChatHeader";
 import ChatWindow from "../../components/ChatWindow";
@@ -72,10 +74,11 @@ const Chat = () => {
     };
   }, [resetInactivityTimer]);
 
-  // Встановлюємо статус "offline" при закритті вкладки
+  // Встановлюємо статус "offline" при закритті вкладки і видаляємо користувача
   useEffect(() => {
     const handleBeforeUnload = async () => {
       await setUserOffline();
+      await removeUserFromFirestore(); // Видаляємо користувача з Firestore
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -86,21 +89,28 @@ const Chat = () => {
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
-    await sendMessage(message);
-    setMessage("");
+
+    if (message.trim() === "/clear") {
+      await clearChat(messages); // Викликаємо clearChat при команді /clear
+      setMessage("");
+    } else {
+      await sendMessage(message);
+      setMessage("");
+    }
   };
 
   return (
     <div className="chat-container">
       <ChatHeader onSignOut={removeUserFromFirestore} />
       <div className="chat-content">
-        <ChatWindow messages={messages} />
+        <ChatWindow messages={messages} onDeleteMessage={deleteMessage} />
         <UserList users={users} />
       </div>
       <MessageInput
         message={message}
         setMessage={setMessage}
         onSendMessage={handleSendMessage}
+        onClearChat={() => clearChat(messages)} // Очищення чату при команді /clear
       />
     </div>
   );
